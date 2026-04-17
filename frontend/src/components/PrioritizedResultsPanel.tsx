@@ -23,17 +23,27 @@ export function PrioritizedResultsPanel({
   }
 
   const isShowingSaved = activeSnapshot?.id === savedSnapshot?.id
+  const priorityStyles: Record<Priority, string> = {
+    High: 'border-rose-200 bg-rose-50/60',
+    Medium: 'border-amber-200 bg-amber-50/60',
+    Low: 'border-emerald-200 bg-emerald-50/60',
+  }
 
   return (
-    <section className="rounded-2xl border border-cyan-100 bg-white/90 p-5 shadow-[0_16px_45px_rgba(8,47,73,0.12)]">
+    <section className="rounded-3xl border border-white/70 bg-white/80 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur md:p-6">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-cyan-900">Prioritized Results</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Prioritized Results</h2>
           <p className="mt-1 text-sm text-slate-600">Just sorted output grouped by priority.</p>
           {activeSnapshot ? (
             <p className="mt-1 text-xs text-slate-500">
               Last sorted: {new Date(activeSnapshot.sortedAt).toLocaleString()}
             </p>
+          ) : null}
+          {activeSnapshot ? (
+            <span className="mt-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+              {isShowingSaved ? 'Saved Record' : 'Current Result'}
+            </span>
           ) : null}
         </div>
 
@@ -42,7 +52,7 @@ export function PrioritizedResultsPanel({
             type="button"
             disabled={!activeSnapshot || isShowingSaved}
             onClick={onSaveSnapshot}
-            className="rounded-lg bg-cyan-700 px-3 py-1.5 text-xs font-semibold text-white transition enabled:hover:bg-cyan-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition enabled:hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Save Result
           </button>
@@ -50,7 +60,7 @@ export function PrioritizedResultsPanel({
             type="button"
             disabled={!savedSnapshot || !activeSnapshot || activeSnapshot.id === savedSnapshot.id}
             onClick={onSwitchSnapshot}
-            className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition enabled:hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition enabled:hover:border-sky-300 enabled:hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Switch To Saved
           </button>
@@ -62,10 +72,10 @@ export function PrioritizedResultsPanel({
       ) : (
         <div className="grid gap-3">
           {(['High', 'Medium', 'Low'] as Priority[]).map((priority) => (
-            <div key={priority} className="rounded-xl border border-cyan-100 bg-cyan-50/40 p-3">
-              <h3 className="mb-2 flex items-center justify-between text-base font-semibold text-cyan-900">
+            <div key={priority} className={`rounded-2xl border p-3 ${priorityStyles[priority]}`}>
+              <h3 className="mb-2 flex items-center justify-between text-base font-semibold text-slate-800">
                 <span>{priority} Priority</span>
-                <span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-700">
+                <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs text-slate-700">
                   {groupedResults[priority].length}
                 </span>
               </h3>
@@ -76,7 +86,7 @@ export function PrioritizedResultsPanel({
                   {groupedResults[priority].map((item, index) => (
                     <li
                       key={`${item.task}-${index}`}
-                      className="rounded-lg border border-slate-200 bg-white p-2.5"
+                      className="rounded-xl border border-slate-200/80 bg-white/90 p-2.5"
                     >
                       <p className="text-sm font-medium text-slate-800">{item.task}</p>
                       <small className="mt-1 inline-block text-xs text-slate-500">{item.category}</small>

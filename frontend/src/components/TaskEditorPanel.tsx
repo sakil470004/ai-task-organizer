@@ -39,14 +39,14 @@ export function TaskEditorPanel({
   onPrioritizeTasks,
 }: TaskEditorPanelProps) {
   return (
-    <section className="rounded-2xl border border-cyan-100 bg-white/90 p-5 shadow-[0_16px_45px_rgba(8,47,73,0.12)]">
-      <p className="mb-4 text-sm text-slate-600">
+    <section className="rounded-3xl border border-white/70 bg-white/80 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur md:p-6">
+      <p className="mb-4 text-sm text-slate-600 md:mb-5">
         Add tasks, edit them, and use AI to prioritize by urgency.
       </p>
 
-      <form className="mb-4 flex flex-col gap-3 sm:flex-row" onSubmit={onAddTask}>
+      <form className="mb-5 flex gap-3 sm:flex-row" onSubmit={onAddTask}>
         <input
-          className="w-full rounded-xl border border-cyan-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none ring-cyan-500 transition focus:ring-2"
+          className="flex-grow rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
           type="text"
           placeholder="Add a task..."
           value={taskInput}
@@ -54,7 +54,7 @@ export function TaskEditorPanel({
           aria-label="Task input"
         />
         <button
-          className="rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-800"
+          className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
           type="submit"
         >
           Add Task
@@ -62,20 +62,20 @@ export function TaskEditorPanel({
       </form>
 
       <div>
-        <h2 className="mb-3 text-lg font-semibold text-cyan-900">Unsorted Tasks ({tasks.length})</h2>
+        <h2 className="mb-3 text-lg font-semibold text-slate-900">Unsorted Tasks ({tasks.length})</h2>
         {tasks.length === 0 ? (
           <p className="text-sm text-slate-500">No tasks added yet.</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {tasks.map((task, index) => (
               <li
                 key={`${task}-${index}`}
-                className="rounded-xl border border-cyan-100 bg-cyan-50/50 p-3"
+                className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_4px_16px_rgba(15,23,42,0.04)]"
               >
                 {editingIndex === index ? (
                   <div className="grid gap-2">
                     <input
-                      className="w-full rounded-lg border border-cyan-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none ring-cyan-500 transition focus:ring-2"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
                       type="text"
                       value={editingText}
                       onChange={(event) => onEditingTextChange(event.target.value)}
@@ -84,7 +84,7 @@ export function TaskEditorPanel({
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className="rounded-lg bg-cyan-100 px-3 py-1.5 text-xs font-semibold text-cyan-900 transition hover:bg-cyan-200"
+                        className="rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-200"
                         onClick={() => onSaveEditing(index)}
                       >
                         Save
@@ -104,7 +104,7 @@ export function TaskEditorPanel({
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className="rounded-lg bg-cyan-100 px-3 py-1.5 text-xs font-semibold text-cyan-900 transition hover:bg-cyan-200"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-200 hover:text-sky-700"
                         onClick={() => onStartEditing(index)}
                       >
                         Edit
@@ -126,7 +126,7 @@ export function TaskEditorPanel({
       </div>
 
       <button
-        className="mt-4 w-full rounded-xl bg-gradient-to-r from-cyan-700 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white transition enabled:hover:from-cyan-800 enabled:hover:to-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-5 w-full rounded-xl bg-gradient-to-r from-sky-600 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white transition enabled:hover:from-sky-700 enabled:hover:to-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
         onClick={onPrioritizeTasks}
         disabled={isLoading || tasks.length === 0}
       >

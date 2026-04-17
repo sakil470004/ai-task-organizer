@@ -271,8 +271,8 @@ function App() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-cyan-50 via-slate-50 to-stone-100 p-4 md:p-8">
-      <div className="mx-auto max-w-6xl">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_0%_0%,#e0f2fe_0%,#f8fafc_42%,#f5f7fb_100%)] px-4 py-6 md:px-8 md:py-10">
+      <div className="mx-auto max-w-4xl">
         <AppHeader
           viewMode={viewMode}
           canOpenResults={Boolean(currentSnapshot || savedSnapshot)}

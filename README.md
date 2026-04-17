@@ -18,6 +18,7 @@ This project is a full-stack app built with:
 - Switch back to the saved result
 - Show last sorted timestamp in results view
 - Handle Gemini quota issues with backend fallback response
+- Mobile responsive UI for small, medium, and desktop screens
 
 ## How App Works
 
@@ -225,6 +226,7 @@ Success response shape:
 - API key is never exposed to frontend.
 - If Gemini returns quota/rate-limit errors, backend includes fallback prioritization behavior.
 - Raw tasks and saved latest prioritized result are stored in browser localStorage.
+- The app is optimized for both desktop and mobile responsive layouts.
 
 ## Vercel Deployment Fix (localhost issue)
 

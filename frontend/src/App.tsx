@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { AppHeader } from './components/AppHeader'
 import { PrioritizedResultsPanel } from './components/PrioritizedResultsPanel'
 import { TaskEditorPanel } from './components/TaskEditorPanel'
 import type { PrioritizedTask, SavedSnapshot, ViewMode } from './types/task'
+import backgroundImage from './assets/background.jpg'
 
 const STORAGE_KEY = 'ai-task-organizer:tasks'
 const SAVED_SNAPSHOT_KEY = 'ai-task-organizer:last-prioritized-snapshot'
@@ -277,44 +279,75 @@ function App() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_0%_0%,#e0f2fe_0%,#f8fafc_42%,#f5f7fb_100%)] px-4 py-6 md:px-8 md:py-10">
-      <div className="mx-auto max-w-4xl">
+    <main
+      className="min-h-screen px-4 py-6 md:px-8 md:py-10"
+      style={{
+        backgroundImage: `linear-gradient(rgba(248, 250, 252, 0.84), rgba(245, 247, 251, 0.84)), url(${backgroundImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <motion.div
+        className="mx-auto max-w-4xl"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+      >
         <AppHeader
           viewMode={viewMode}
           canOpenResults={Boolean(currentSnapshot || savedSnapshot)}
           onToggleView={handleToggleView}
         />
 
-        {viewMode === 'tasks' ? (
-          <TaskEditorPanel
-            taskInput={taskInput}
-            tasks={tasks}
-            editingIndex={editingIndex}
-            editingText={editingText}
-            isLoading={isLoading}
-            errorMessage={errorMessage}
-            infoMessage={infoMessage}
-            onTaskInputChange={setTaskInput}
-            onAddTask={handleAddTask}
-            onStartEditing={handleStartEditing}
-            onEditingTextChange={setEditingText}
-            onSaveEditing={handleSaveEditing}
-            onCancelEditing={() => {
-              setEditingIndex(null)
-              setEditingText('')
-            }}
-            onDeleteTask={handleDeleteTask}
-            onPrioritizeTasks={handlePrioritizeTasks}
-          />
-        ) : (
-          <PrioritizedResultsPanel
-            activeSnapshot={activeSnapshot}
-            savedSnapshot={savedSnapshot}
-            onSaveSnapshot={handleSaveCurrentSnapshot}
-            onSwitchSnapshot={handleSwitchToSavedSnapshot}
-          />
-        )}
-      </div>
+        <AnimatePresence mode="wait">
+          {viewMode === 'tasks' ? (
+            <motion.div
+              key="tasks-view"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              <TaskEditorPanel
+                taskInput={taskInput}
+                tasks={tasks}
+                editingIndex={editingIndex}
+                editingText={editingText}
+                isLoading={isLoading}
+                errorMessage={errorMessage}
+                infoMessage={infoMessage}
+                onTaskInputChange={setTaskInput}
+                onAddTask={handleAddTask}
+                onStartEditing={handleStartEditing}
+                onEditingTextChange={setEditingText}
+                onSaveEditing={handleSaveEditing}
+                onCancelEditing={() => {
+                  setEditingIndex(null)
+                  setEditingText('')
+                }}
+                onDeleteTask={handleDeleteTask}
+                onPrioritizeTasks={handlePrioritizeTasks}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="results-view"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              <PrioritizedResultsPanel
+                activeSnapshot={activeSnapshot}
+                savedSnapshot={savedSnapshot}
+                onSaveSnapshot={handleSaveCurrentSnapshot}
+                onSwitchSnapshot={handleSwitchToSavedSnapshot}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </main>
   )
 }

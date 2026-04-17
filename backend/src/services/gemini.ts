@@ -87,6 +87,12 @@ async function requestGeminiText(
     const errorJson = (await response.json().catch(() => null)) as GeminiErrorResponse | null
     const retryDelayMs = extractRetryDelayMs(errorJson)
     const status = errorJson?.error?.status ?? ''
+    const providerMessage = errorJson?.error?.message ?? 'No provider message available'
+
+    // Prints provider details so terminal logs explain exactly why AI/API failed.
+    console.error(
+      `Gemini request failed: httpStatus=${response.status}, status=${status || 'UNKNOWN'}, message=${providerMessage}`,
+    )
 
     if (
       response.status === 429 &&
@@ -94,6 +100,7 @@ async function requestGeminiText(
       attempt === 1 &&
       retryDelayMs > 0
     ) {
+      console.warn(`Gemini retry scheduled in ${retryDelayMs}ms (attempt ${attempt + 1}/2)`)
       await delay(retryDelayMs)
       continue
     }
@@ -107,7 +114,7 @@ async function requestGeminiText(
     }
 
     throw new AppError(
-      `Gemini request failed with status ${response.status}.`,
+      `Gemini request failed with status ${response.status}: ${providerMessage}`,
       502,
       'AI_PROVIDER_ERROR',
     )

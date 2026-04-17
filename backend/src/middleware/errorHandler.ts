@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
 import { ZodError } from 'zod'
+import { isAppError } from '../errors.js'
 import type { ApiErrorBody } from '../types.js'
 
 /**
@@ -16,6 +17,16 @@ export function errorHandler(
       error: {
         code: 'VALIDATION_ERROR',
         message: error.issues.map((issue) => issue.message).join(', '),
+      },
+    })
+    return
+  }
+
+  if (isAppError(error)) {
+    res.status(error.statusCode).json({
+      error: {
+        code: error.code,
+        message: error.message,
       },
     })
     return

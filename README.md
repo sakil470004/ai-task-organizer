@@ -114,6 +114,8 @@ Backend:
 - Required keys:
   - `PORT=5000`
   - `GEMINI_API_KEY=your_gemini_api_key`
+  - `GEMINI_MODEL=gemini-2.0-flash` (optional)
+  - `ENABLE_QUOTA_FALLBACK=true` (optional, default true)
 
 Frontend (optional override):
 - Copy `frontend/.env.example` to `frontend/.env`
@@ -140,6 +142,12 @@ npm run dev
 - API keys are used only on backend.
 - Never expose AI keys in frontend source or browser requests.
 - Keep `.env` files uncommitted.
+
+## Quota Handling
+
+- If Gemini returns HTTP 429 (quota/rate-limit), backend retries once using `RetryInfo` delay when available.
+- If quota is still exhausted and `ENABLE_QUOTA_FALLBACK=true`, backend returns deterministic fallback prioritization so the app remains usable.
+- Fallback responses include header `x-prioritization-mode: fallback`.
 
 ## Suggested Commit Structure
 

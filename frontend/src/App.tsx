@@ -34,6 +34,7 @@ function App() {
   const [prioritizedTasks, setPrioritizedTasks] = useState<PrioritizedTask[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [infoMessage, setInfoMessage] = useState('')
 
   /**
    * Persists only raw user tasks to localStorage based on assignment requirement.
@@ -71,6 +72,7 @@ function App() {
     setTasks((previous) => [...previous, normalizedTask])
     setTaskInput('')
     setErrorMessage('')
+    setInfoMessage('')
     setPrioritizedTasks([])
   }
 
@@ -81,6 +83,7 @@ function App() {
     setTasks((previous) => previous.filter((_, currentIndex) => currentIndex !== index))
     setPrioritizedTasks([])
     setErrorMessage('')
+    setInfoMessage('')
     if (editingIndex === index) {
       setEditingIndex(null)
       setEditingText('')
@@ -111,6 +114,7 @@ function App() {
     setEditingText('')
     setPrioritizedTasks([])
     setErrorMessage('')
+    setInfoMessage('')
   }
 
   /**
@@ -124,6 +128,7 @@ function App() {
 
     setIsLoading(true)
     setErrorMessage('')
+    setInfoMessage('')
 
     try {
       const response = await fetch(`${API_BASE_URL}/prioritize`, {
@@ -149,6 +154,11 @@ function App() {
         throw new Error('Unexpected prioritize response format from server.')
       }
 
+      // Exposes quota fallback mode so users understand degraded AI behavior.
+      if (response.headers.get('x-prioritization-mode') === 'fallback') {
+        setInfoMessage('Gemini quota is exhausted, so fallback prioritization was used.')
+      }
+
       const validated = data
         .map((item) => item as Partial<PrioritizedTask>)
         .filter(
@@ -168,6 +178,7 @@ function App() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unexpected error occurred.'
       setErrorMessage(message)
+      setInfoMessage('')
       setPrioritizedTasks([])
     } finally {
       setIsLoading(false)
@@ -284,6 +295,12 @@ function App() {
           {errorMessage ? (
             <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
               {errorMessage}
+            </div>
+          ) : null}
+
+          {infoMessage ? (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {infoMessage}
             </div>
           ) : null}
         </section>

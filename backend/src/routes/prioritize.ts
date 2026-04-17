@@ -16,7 +16,7 @@ const prioritizeRequestSchema = z.object({
  */
 export function buildPrioritizeRouter(geminiApiKey: string): Router {
   const router = Router()
-  const modelName = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash'
+  const modelName = process.env.GEMINI_MODEL ?? 'gemini-flash-latest'
   const enableQuotaFallback = (process.env.ENABLE_QUOTA_FALLBACK ?? 'true') === 'true'
 
   router.post('/', async (req, res, next) => {

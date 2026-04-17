@@ -7,7 +7,13 @@ import type { PrioritizedTask, SavedSnapshot, ViewMode } from './types/task'
 
 const STORAGE_KEY = 'ai-task-organizer:tasks'
 const SAVED_SNAPSHOT_KEY = 'ai-task-organizer:last-prioritized-snapshot'
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000'
+
+/**
+ * Uses Vercel backend service route in production and localhost in local development.
+ */
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.PROD ? '/_/backend' : 'http://localhost:5000')
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('tasks')

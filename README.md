@@ -143,6 +143,12 @@ Reference template:
 
 - `frontend/.env.example`
 
+For deployed Vercel app using your current `vercel.json` service route prefix:
+
+```env
+VITE_API_URL=/_/backend
+```
+
 ## How To Run Locally
 
 Open two terminal windows.
@@ -219,3 +225,12 @@ Success response shape:
 - API key is never exposed to frontend.
 - If Gemini returns quota/rate-limit errors, backend includes fallback prioritization behavior.
 - Raw tasks and saved latest prioritized result are stored in browser localStorage.
+
+## Vercel Deployment Fix (localhost issue)
+
+If deployed frontend is still calling localhost backend, check these points:
+
+1. In Vercel Project Settings -> Environment Variables, set `VITE_API_URL` to `/_/backend`.
+2. Redeploy after updating environment variables.
+3. Confirm frontend build is using latest code where production fallback is `/_/backend`.
+4. Hard refresh browser to clear cached frontend assets.

@@ -5,7 +5,6 @@ import { AppHeader } from './components/AppHeader'
 import { PrioritizedResultsPanel } from './components/PrioritizedResultsPanel'
 import { TaskEditorPanel } from './components/TaskEditorPanel'
 import type { PrioritizedTask, SavedSnapshot, ViewMode } from './types/task'
-import backgroundImage from './assets/background.jpg'
 
 const STORAGE_KEY = 'ai-task-organizer:tasks'
 const SAVED_SNAPSHOT_KEY = 'ai-task-organizer:last-prioritized-snapshot'
@@ -279,15 +278,7 @@ function App() {
   }
 
   return (
-    <main
-      className="min-h-screen px-4 py-6 md:px-8 md:py-10"
-      style={{
-        backgroundImage: `linear-gradient(rgba(248, 250, 252, 0.84), rgba(245, 247, 251, 0.84)), url(${backgroundImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
-    >
+    <main className="min-h-screen px-4 py-6 md:px-8 md:py-10">
       <motion.div
         className="mx-auto max-w-4xl"
         initial={{ opacity: 0, y: 8 }}

@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+/* Prevent layout jump when switching views by keeping scrollbar width reserved. */
+html {
+	overflow-y: scroll;
+	scrollbar-gutter: stable;
+}
+
+body,
+#root {
+	min-height: 100%;
+	overflow-x: hidden;
+}

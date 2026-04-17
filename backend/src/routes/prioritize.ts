@@ -33,6 +33,7 @@ export function buildPrioritizeRouter(geminiApiKey: string): Router {
 
       const result = await prioritizeTasksWithGemini(parsed.tasks, geminiApiKey, modelName)
       console.log(`[${requestTag}] Gemini prioritization successful`) 
+      // console.log(`[${requestTag}] Prioritized tasks: ${JSON.stringify(result)}`)
       res.status(200).json(result)
     } catch (error) {
       // Logs actionable error reason for API failure diagnosis from terminal.

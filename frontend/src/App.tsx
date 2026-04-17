@@ -1,18 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-
-type Priority = 'High' | 'Medium' | 'Low'
-
-interface PrioritizedTask {
-  task: string
-  priority: Priority
-  category: string
-}
+import { AppHeader } from './components/AppHeader'
+import { PrioritizedResultsPanel } from './components/PrioritizedResultsPanel'
+import { TaskEditorPanel } from './components/TaskEditorPanel'
+import type { PrioritizedTask, SavedSnapshot, ViewMode } from './types/task'
 
 const STORAGE_KEY = 'ai-task-organizer:tasks'
+const SAVED_SNAPSHOT_KEY = 'ai-task-organizer:last-prioritized-snapshot'
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000'
 
 function App() {
+  const [viewMode, setViewMode] = useState<ViewMode>('tasks')
   const [taskInput, setTaskInput] = useState('')
   const [tasks, setTasks] = useState<string[]>(() => {
     const rawValue = window.localStorage.getItem(STORAGE_KEY)
@@ -31,7 +29,40 @@ function App() {
   })
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [editingText, setEditingText] = useState('')
-  const [prioritizedTasks, setPrioritizedTasks] = useState<PrioritizedTask[]>([])
+  const [currentSnapshot, setCurrentSnapshot] = useState<SavedSnapshot | null>(null)
+  const [savedSnapshot, setSavedSnapshot] = useState<SavedSnapshot | null>(() => {
+    const rawValue = window.localStorage.getItem(SAVED_SNAPSHOT_KEY)
+    if (!rawValue) {
+      return null
+    }
+
+    try {
+      const parsed = JSON.parse(rawValue) as Partial<SavedSnapshot>
+      if (
+        typeof parsed.id !== 'string' ||
+        typeof parsed.sortedAt !== 'string' ||
+        !Array.isArray(parsed.sourceTasks) ||
+        !Array.isArray(parsed.prioritizedTasks)
+      ) {
+        return null
+      }
+
+      return {
+        id: parsed.id,
+        sortedAt: parsed.sortedAt,
+        sourceTasks: parsed.sourceTasks.filter((task): task is string => typeof task === 'string'),
+        prioritizedTasks: parsed.prioritizedTasks.filter(
+          (item): item is PrioritizedTask =>
+            typeof item?.task === 'string' &&
+            typeof item?.category === 'string' &&
+            (item?.priority === 'High' || item?.priority === 'Medium' || item?.priority === 'Low'),
+        ),
+      }
+    } catch {
+      return null
+    }
+  })
+  const [activeSnapshotId, setActiveSnapshotId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [infoMessage, setInfoMessage] = useState('')
@@ -49,15 +80,10 @@ function App() {
   }, [tasks])
 
   /**
-   * Produces grouped result buckets for clear high/medium/low rendering.
+   * Resolves whichever snapshot is currently selected in results mode.
    */
-  const groupedResults = useMemo(() => {
-    return {
-      High: prioritizedTasks.filter((item) => item.priority === 'High'),
-      Medium: prioritizedTasks.filter((item) => item.priority === 'Medium'),
-      Low: prioritizedTasks.filter((item) => item.priority === 'Low'),
-    }
-  }, [prioritizedTasks])
+  const activeSnapshot =
+    activeSnapshotId === savedSnapshot?.id ? savedSnapshot : currentSnapshot
 
   /**
    * Adds a non-empty task and resets stale AI/error states to keep UI coherent.
@@ -73,7 +99,8 @@ function App() {
     setTaskInput('')
     setErrorMessage('')
     setInfoMessage('')
-    setPrioritizedTasks([])
+    setCurrentSnapshot(null)
+    setActiveSnapshotId(null)
   }
 
   /**
@@ -81,7 +108,8 @@ function App() {
    */
   function handleDeleteTask(index: number) {
     setTasks((previous) => previous.filter((_, currentIndex) => currentIndex !== index))
-    setPrioritizedTasks([])
+    setCurrentSnapshot(null)
+    setActiveSnapshotId(null)
     setErrorMessage('')
     setInfoMessage('')
     if (editingIndex === index) {
@@ -112,7 +140,8 @@ function App() {
     )
     setEditingIndex(null)
     setEditingText('')
-    setPrioritizedTasks([])
+    setCurrentSnapshot(null)
+    setActiveSnapshotId(null)
     setErrorMessage('')
     setInfoMessage('')
   }
@@ -174,185 +203,112 @@ function App() {
         throw new Error('AI response did not include valid prioritized tasks.')
       }
 
-      setPrioritizedTasks(validated)
+      const snapshot: SavedSnapshot = {
+        id: `snapshot-${Date.now()}`,
+        sortedAt: new Date().toISOString(),
+        sourceTasks: [...tasks],
+        prioritizedTasks: validated,
+      }
+
+      setCurrentSnapshot(snapshot)
+      setActiveSnapshotId(snapshot.id)
+      setViewMode('results')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unexpected error occurred.'
       setErrorMessage(message)
       setInfoMessage('')
-      setPrioritizedTasks([])
+      setCurrentSnapshot(null)
+      setActiveSnapshotId(null)
     } finally {
       setIsLoading(false)
     }
   }
 
+  /**
+   * Saves only the latest generated AI result as single history record.
+   */
+  function handleSaveCurrentSnapshot() {
+    if (!currentSnapshot) {
+      return
+    }
+
+    window.localStorage.setItem(SAVED_SNAPSHOT_KEY, JSON.stringify(currentSnapshot))
+    setSavedSnapshot(currentSnapshot)
+    setInfoMessage('Latest prioritized result was saved to local history.')
+  }
+
+  /**
+   * Switches results page to the one saved historical record.
+   */
+  function handleSwitchToSavedSnapshot() {
+    if (!savedSnapshot) {
+      return
+    }
+
+    setActiveSnapshotId(savedSnapshot.id)
+    setViewMode('results')
+    setInfoMessage('Showing saved prioritized record.')
+  }
+
+  /**
+   * Toggles between task editor and results screens from header button.
+   */
+  function handleToggleView() {
+    if (viewMode === 'tasks') {
+      if (!currentSnapshot && !savedSnapshot) {
+        setErrorMessage('No prioritized results available yet.')
+        return
+      }
+
+      if (!activeSnapshotId) {
+        setActiveSnapshotId(currentSnapshot?.id ?? savedSnapshot?.id ?? null)
+      }
+      setViewMode('results')
+      return
+    }
+
+    setViewMode('tasks')
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-cyan-50 via-slate-50 to-stone-100 p-4 md:p-8">
-      <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-2">
-        <section className="rounded-2xl border border-cyan-100 bg-white/90 p-5 shadow-[0_16px_45px_rgba(8,47,73,0.12)]">
-          <div className="mb-5">
-            <h1 className="text-3xl font-bold tracking-tight text-cyan-900">
-              Smart To-Do List
-            </h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Add tasks, edit them, and use AI to prioritize by urgency.
-            </p>
-          </div>
+      <div className="mx-auto max-w-6xl">
+        <AppHeader
+          viewMode={viewMode}
+          canOpenResults={Boolean(currentSnapshot || savedSnapshot)}
+          onToggleView={handleToggleView}
+        />
 
-          <form className="mb-4 flex flex-col gap-3 sm:flex-row" onSubmit={handleAddTask}>
-            <input
-              className="w-full rounded-xl border border-cyan-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none ring-cyan-500 transition focus:ring-2"
-              type="text"
-              placeholder="Add a task..."
-              value={taskInput}
-              onChange={(event) => setTaskInput(event.target.value)}
-              aria-label="Task input"
-            />
-            <button
-              className="rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-800"
-              type="submit"
-            >
-              Add Task
-            </button>
-          </form>
-
-          <div>
-            <h2 className="mb-3 text-lg font-semibold text-cyan-900">
-              Unsorted Tasks ({tasks.length})
-            </h2>
-            {tasks.length === 0 ? (
-              <p className="text-sm text-slate-500">No tasks added yet.</p>
-            ) : (
-              <ul className="space-y-2">
-                {tasks.map((task, index) => (
-                  <li
-                    key={`${task}-${index}`}
-                    className="rounded-xl border border-cyan-100 bg-cyan-50/50 p-3"
-                  >
-                    {editingIndex === index ? (
-                      <div className="grid gap-2">
-                        <input
-                          className="w-full rounded-lg border border-cyan-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none ring-cyan-500 transition focus:ring-2"
-                          type="text"
-                          value={editingText}
-                          onChange={(event) => setEditingText(event.target.value)}
-                          aria-label="Edit task"
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            className="rounded-lg bg-cyan-100 px-3 py-1.5 text-xs font-semibold text-cyan-900 transition hover:bg-cyan-200"
-                            onClick={() => handleSaveEditing(index)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
-                            onClick={() => {
-                              setEditingIndex(null)
-                              setEditingText('')
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <span className="text-sm font-medium text-slate-800">{task}</span>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            className="rounded-lg bg-cyan-100 px-3 py-1.5 text-xs font-semibold text-cyan-900 transition hover:bg-cyan-200"
-                            onClick={() => handleStartEditing(index)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-200"
-                            onClick={() => handleDeleteTask(index)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <button
-            className="mt-4 w-full rounded-xl bg-gradient-to-r from-cyan-700 to-cyan-500 px-4 py-2.5 text-sm font-semibold text-white transition enabled:hover:from-cyan-800 enabled:hover:to-cyan-600 disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={handlePrioritizeTasks}
-            disabled={isLoading || tasks.length === 0}
-          >
-            {isLoading ? 'Prioritizing...' : 'Prioritize Tasks'}
-          </button>
-
-          {errorMessage ? (
-            <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-              {errorMessage}
-            </div>
-          ) : null}
-
-          {infoMessage ? (
-            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              {infoMessage}
-            </div>
-          ) : null}
-        </section>
-
-        <section className="rounded-2xl border border-cyan-100 bg-white/90 p-5 shadow-[0_16px_45px_rgba(8,47,73,0.12)]">
-          <div className="mb-5">
-            <h2 className="text-2xl font-bold tracking-tight text-cyan-900">
-              Prioritized Results
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Grouped by AI-estimated urgency and importance.
-            </p>
-          </div>
-
-          {prioritizedTasks.length === 0 ? (
-            <p className="text-sm text-slate-500">No prioritized output yet.</p>
-          ) : (
-            <div className="grid gap-3">
-              {(['High', 'Medium', 'Low'] as Priority[]).map((priority) => (
-                <div
-                  key={priority}
-                  className="rounded-xl border border-cyan-100 bg-cyan-50/40 p-3"
-                >
-                  <h3 className="mb-2 flex items-center justify-between text-base font-semibold text-cyan-900">
-                    <span>{priority} Priority</span>
-                    <span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-700">
-                      {groupedResults[priority].length}
-                    </span>
-                  </h3>
-                  {groupedResults[priority].length === 0 ? (
-                    <p className="text-sm text-slate-500">No tasks in this group.</p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {groupedResults[priority].map((item, index) => (
-                        <li
-                          key={`${item.task}-${index}`}
-                          className="rounded-lg border border-slate-200 bg-white p-2.5"
-                        >
-                          <p className="text-sm font-medium text-slate-800">{item.task}</p>
-                          <small className="mt-1 inline-block text-xs text-slate-500">
-                            {item.category}
-                          </small>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-        </div>
+        {viewMode === 'tasks' ? (
+          <TaskEditorPanel
+            taskInput={taskInput}
+            tasks={tasks}
+            editingIndex={editingIndex}
+            editingText={editingText}
+            isLoading={isLoading}
+            errorMessage={errorMessage}
+            infoMessage={infoMessage}
+            onTaskInputChange={setTaskInput}
+            onAddTask={handleAddTask}
+            onStartEditing={handleStartEditing}
+            onEditingTextChange={setEditingText}
+            onSaveEditing={handleSaveEditing}
+            onCancelEditing={() => {
+              setEditingIndex(null)
+              setEditingText('')
+            }}
+            onDeleteTask={handleDeleteTask}
+            onPrioritizeTasks={handlePrioritizeTasks}
+          />
+        ) : (
+          <PrioritizedResultsPanel
+            activeSnapshot={activeSnapshot}
+            savedSnapshot={savedSnapshot}
+            onSaveSnapshot={handleSaveCurrentSnapshot}
+            onSwitchSnapshot={handleSwitchToSavedSnapshot}
+          />
+        )}
+      </div>
     </main>
   )
 }
